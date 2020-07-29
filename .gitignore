@@ -1,7 +1,7 @@
 # File created using '.gitignore Generator' for Visual Studio Code: https://bit.ly/vscode-gig
 
-# Created by https://www.toptal.com/developers/gitignore/api/python,pydev,jupyternotebooks,c++,c,visualstudiocode
-# Edit at https://www.toptal.com/developers/gitignore?templates=python,pydev,jupyternotebooks,c++,c,visualstudiocode
+# Created by https://www.toptal.com/developers/gitignore/api/visualstudiocode,python,pydev,jupyternotebooks,c++,c,platformio
+# Edit at https://www.toptal.com/developers/gitignore?templates=visualstudiocode,python,pydev,jupyternotebooks,c++,c,platformio
 
 ### C ###
 # Prerequisites
@@ -90,6 +90,13 @@ ipython_config.py
 # Remove previous ipynb_checkpoints
 #   git rm -r .ipynb_checkpoints/
 
+### PlatformIO ###
+.pioenvs
+.piolibdeps
+.clang_complete
+.gcc-flags.json
+.pio
+
 ### pydev ###
 .pydevproject
 
@@ -145,6 +152,7 @@ coverage.xml
 *.py,cover
 .hypothesis/
 .pytest_cache/
+pytestdebug.log
 
 # Translations
 *.mo
@@ -165,6 +173,7 @@ instance/
 
 # Sphinx documentation
 docs/_build/
+doc/_build/
 
 # PyBuilder
 target/
@@ -235,7 +244,7 @@ dmypy.json
 # Ignore all local history of files
 .history
 
-# End of https://www.toptal.com/developers/gitignore/api/python,pydev,jupyternotebooks,c++,c,visualstudiocode
+# End of https://www.toptal.com/developers/gitignore/api/visualstudiocode,python,pydev,jupyternotebooks,c++,c,platformio
 
 # Custom rules (everything added below won't be overriden by 'Generate .gitignore File' if you use 'Update' option)
 
