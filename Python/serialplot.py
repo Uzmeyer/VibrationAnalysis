@@ -1,5 +1,5 @@
 import serial
-import matplotlib as plt
+import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 from matplotlib.figure import Figure
 import matplotlib.animation as animation
@@ -28,7 +28,6 @@ class SerialPlot:
         self.data.append(collections.deque([0] * plotLength, maxlen=plotLength))  #time
         for i in range(self.numPlots):
             self.data.append(collections.deque([0] * plotLength, maxlen=plotLength))  #data
-        self.rawData = bytearray(numPlots * dataNumBytes + 2 + 2)  #buffer for databytes + startbytes + timebytes
         self.recBuffer = collections.deque(maxlen=64)
         self.serial = serial.Serial()
         self.isSerialOpen = False
@@ -37,12 +36,8 @@ class SerialPlot:
         self.serialPortNames = []
         self.scanports()
         self.thread = None
-        self.sbyte1Found = False
-        self.sbyte2Found = False
-        self.messageLength = self.dataNumBytes * numPlots + 2
-        self.message = bytearray(self.messageLength)
-        self.bytesCollected = 0
-        self.messages = []
+        self.plotTimer = 0
+        self.previousTimer = 0
 
         self.setbaud(serialBaud)
         self.setserial(serialPort)
@@ -102,32 +97,27 @@ class SerialPlot:
             print("{}: {} [{}]".format(port, desc, hwid))
             self.serialPortNames.append(port)
 
-    def getserialdata(self):
+    def getserialdata(self, frame, lines, lineValueText, lineLabel, timeText):
         while len(self.recBuffer) > 0:
-            byte = self.recBuffer.popleft()
-            if not self.sbyte1Found and not self.sbyte2Found:
-                if byte != 255:
-                    continue
-                else:
-                    self.sbyte1Found = True
-                    continue
-            elif self.sbyte1Found and not self.sbyte2Found:
-                if byte == 85:
-                    self.sbyte2Found = True
-                    continue
-                else:
-                    self.sbyte1Found = False
-                    continue
-            elif self.bytesCollected < self.messageLength:
-                self.message[self.bytesCollected] = byte
-                self.bytesCollected += 1
-                continue
-            else:
-                print(self.message)
-                self.messages.append(self.message.copy())
-                self.bytesCollected = 0
-                self.sbyte1Found = False
-                self.sbyte2Found = False
+            line = self.recBuffer.popleft()
+            if len(line) == 16:
+                currentTimer = time.perf_counter_ns()
+                self.plotTimer = int((currentTimer - self.previousTimer) / 1000)  # the first reading will be erroneous
+                self.previousTimer = currentTimer
+                timeText.set_text('Plot Interval = ' + str(self.plotTimer) + 'ms')
+                databytes = bytearray.fromhex(line)
+                timedata = databytes[0:2]
+                value, = struct.unpack('>h', timedata)
+                self.data[0].append(value)
+                for i in range(self.numPlots):
+                    index = i + 1
+                    sampledata = databytes[(index * self.dataNumBytes):(self.dataNumBytes + index * self.dataNumBytes)]
+                    value, = struct.unpack('>h', sampledata)
+                    self.data[index].append(value)
+                    lines[i].set_data(range(self.plotLength), self.data[index])
+                    lineValueText[i].set_text('[' + lineLabel[i] + '] = ' + str(value))
+
+
 
     def serialStart(self):
         if self.thread is None:
@@ -141,11 +131,10 @@ class SerialPlot:
         time.sleep(1)
         self.serial.reset_input_buffer()
         while self.isRun:
-            self.serial.readinto(self.rawData)
+            line = self.serial.readline()
+            decode = line.decode('utf8').rstrip()
             self.isReceiving = True
-            privateData = copy.deepcopy(self.rawData)
-            for byte in privateData:
-                self.recBuffer.append(copy.deepcopy(byte))
+            self.recBuffer.append(decode)
 
     def close(self):
         self.isRun = False
@@ -154,7 +143,12 @@ class SerialPlot:
         print("Data collection stopped\n")
 
 
-if __name__ == "__main__":
+def main():
+    maxPlotLength = 100  # number of points in x-axis of real time plot
+    dataNumBytes = 2  # number of bytes of 1 data point
+    numPlots = 3  # number of plots in 1 graph
+    baudRate = 2000000
+
     print("running serialplot as script\n")
     portnames = ['None']
     ports = serial.tools.list_ports.comports()
@@ -164,13 +158,41 @@ if __name__ == "__main__":
 
     if len(portnames) > 1:
         print("Found serial device\n")
-        s = SerialPlot(serialPort=portnames[1], serialBaud=2000000, numPlots=3)
+        s = SerialPlot(serialPort=portnames[1], serialBaud=baudRate, numPlots=numPlots, dataNumBytes=dataNumBytes, plotLength=maxPlotLength)
     else:
         print("No serial devices found\n")
 
+
     s.serialStart()
-    t_end = time.time() + 10
-    while t_end > time.time():
-        s.getserialdata()
+
+    pltInterval = 10  # Period at which the plot animation updates [ms]
+    xmin = 0
+    xmax = maxPlotLength
+    ymin = -(32767)
+    ymax = 32767
+    fig = plt.figure(figsize=(10, 8))
+    ax = plt.axes(xlim=(xmin, xmax), ylim=(float(ymin - (ymax - ymin) / 10), float(ymax + (ymax - ymin) / 10)))
+    ax.set_title('Arduino Accelerometer')
+    ax.set_xlabel("Time")
+    ax.set_ylabel("Accelerometer Output")
+
+    lineLabel = ['X', 'Y', 'Z']
+    style = ['r-', 'c-', 'b-']  # linestyles for the different plots
+    timeText = ax.text(0.70, 0.95, '', transform=ax.transAxes)
+    lines = []
+    lineValueText = []
+    for i in range(numPlots):
+        lines.append(ax.plot([], [], style[i], label=lineLabel[i])[0])
+        lineValueText.append(ax.text(0.70, 0.90 - i * 0.05, '', transform=ax.transAxes))
+
+    anim = animation.FuncAnimation(fig, s.getserialdata, fargs=(lines, lineValueText, lineLabel, timeText), interval=pltInterval)  # fargs has to be a tuple
+    plt.legend(loc="upper left")
+    plt.show()
+
     s.close()
+
     print("done")
+
+
+if __name__ == "__main__":
+    main()

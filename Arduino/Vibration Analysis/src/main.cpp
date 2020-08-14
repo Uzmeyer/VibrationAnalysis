@@ -30,12 +30,32 @@ uint8_t sbyte2 = 0b01010101;
 #define OUTPUT_BINARY_ACCELGYRO
 
 #define LED_PIN 13 // (Arduino is 13, Teensy is 11, Teensy++ is 6)
-
+#define TIMEBYTES 2
+#define DATACHANNELS 2
+#define BYTESPERCHANNEL 2
+#define DATABYTES DATACHANNELS*BYTESPERCHANNEL
+#define STRDELIMS 2
+#define DATALEN TIMEBYTES + DATABYTES
+#define STRLEN 2 * (TIMEBYTES + DATABYTES) + STRDELIMS
 MPU6050 accelgyro;
 long data = 0;
-long i = 0;
+uint16_t i = 0;
 bool blinkState = false;
+uint8_t databuffer[8];
+char sendbuffer[17];
 
+void array_to_string(byte array[], unsigned int len, char buffer[])
+{
+    for (unsigned int i = 0; i < len; i++)
+    {
+        byte nib1 = (array[i] >> 4) & 0x0F;
+        byte nib2 = (array[i] >> 0) & 0x0F;
+        buffer[i*2+0] = nib1  < 0xA ? '0' + nib1  : 'A' + nib1  - 0xA;
+        buffer[i*2+1] = nib2  < 0xA ? '0' + nib2  : 'A' + nib2  - 0xA;
+    }
+    buffer[len*2] = '\n';
+    //buffer[len*2 + 1] = '\0';
+}
 
 void setup() {
   // put your setup code here, to run once:
@@ -68,21 +88,22 @@ void setup() {
 void loop() {
   // put your main code here, to run repeatedly:
   accelgyro.getAcceleration(&ax, &ay, &az);
+  databuffer[0] = i >> 8;
+  databuffer[1] = i & 0xFF;
+  databuffer[2] = ax >> 8;
+  databuffer[3] = ax & 0xFF;
+  databuffer[4] = ay >> 8;
+  databuffer[5] = ay & 0xFF;
+  databuffer[6] = az >> 8;
+  databuffer[7] = az & 0xFF;
+  array_to_string(databuffer, 8, sendbuffer);
+  Serial.write(sendbuffer, 17);
+  
 
 
-  #ifdef OUTPUT_BINARY_ACCELGYRO
-        Serial.write(sbyte1); 
-        Serial.write(sbyte2);
-        Serial.write((uint8_t)(ax >> 8)); Serial.write((uint8_t)(ax & 0xFF));
-        Serial.write((uint8_t)(ay >> 8)); Serial.write((uint8_t)(ay & 0xFF));
-        Serial.write((uint8_t)(az >> 8)); Serial.write((uint8_t)(az & 0xFF));
-        Serial.write((uint8_t)(gx >> 8)); Serial.write((uint8_t)(gx & 0xFF));
-        Serial.write((uint8_t)(gy >> 8)); Serial.write((uint8_t)(gy & 0xFF));
-        Serial.write((uint8_t)(gz >> 8)); Serial.write((uint8_t)(gz & 0xFF));
-  #endif
   
   i++;
   blinkState = !blinkState;
   digitalWrite(LED_PIN, blinkState);
-  delay(100);
+  delay(20);
 }
