@@ -39,7 +39,8 @@ uint8_t sbyte2 = 0b01010101;
 #define STRLEN 2 * (TIMEBYTES + DATABYTES) + STRDELIMS
 MPU6050 accelgyro;
 long data = 0;
-uint16_t i = 0;
+uint16_t loopTime = 1000; //microseconds
+unsigned long timer = 0;
 bool blinkState = false;
 uint8_t databuffer[8];
 char sendbuffer[17];
@@ -55,6 +56,26 @@ void array_to_string(byte array[], unsigned int len, char buffer[])
     }
     buffer[len*2] = '\n';
     //buffer[len*2 + 1] = '\0';
+}
+
+void timeSync(unsigned long deltaT)
+{
+  unsigned long currTime = micros();
+  long timeToDelay = deltaT - (currTime - timer);
+  if (timeToDelay > 5000)
+  {
+    delay(timeToDelay / 1000);
+    delayMicroseconds(timeToDelay % 1000);
+  }
+  else if (timeToDelay > 0)
+  {
+    delayMicroseconds(timeToDelay);
+  }
+  else
+  {
+      // timeToDelay is negative so we start immediately
+  }
+  timer = currTime + timeToDelay;
 }
 
 void setup() {
@@ -87,9 +108,10 @@ void setup() {
 
 void loop() {
   // put your main code here, to run repeatedly:
+  timeSync(loopTime);
   accelgyro.getAcceleration(&ax, &ay, &az);
-  databuffer[0] = i >> 8;
-  databuffer[1] = i & 0xFF;
+  databuffer[0] = timer >> 8;
+  databuffer[1] = timer & 0xFF;
   databuffer[2] = ax >> 8;
   databuffer[3] = ax & 0xFF;
   databuffer[4] = ay >> 8;
@@ -100,10 +122,7 @@ void loop() {
   Serial.write(sendbuffer, 17);
   
 
-
-  
-  i++;
   blinkState = !blinkState;
   digitalWrite(LED_PIN, blinkState);
-  delay(20);
+  delay(1);
 }

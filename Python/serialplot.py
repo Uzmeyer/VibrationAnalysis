@@ -1,5 +1,7 @@
 import serial
 import matplotlib.pyplot as plt
+import numpy as np
+from scipy.fftpack import fft
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 from matplotlib.figure import Figure
 import matplotlib.animation as animation
@@ -114,8 +116,12 @@ class SerialPlot:
                     sampledata = databytes[(index * self.dataNumBytes):(self.dataNumBytes + index * self.dataNumBytes)]
                     value, = struct.unpack('>h', sampledata)
                     self.data[index].append(value)
-                    lines[i].set_data(range(self.plotLength), self.data[index])
+                    lines[i*2].set_data(range(self.plotLength), self.data[index])
                     lineValueText[i].set_text('[' + lineLabel[i] + '] = ' + str(value))
+                    data = list(self.data[index])
+                    #ham = np.hamming(len(data))
+                    spec = abs(np.fft.fft(data))
+                    lines[i*2+1].set_data(range(len(spec)), spec)
 
 
 
@@ -144,7 +150,7 @@ class SerialPlot:
 
 
 def main():
-    maxPlotLength = 100  # number of points in x-axis of real time plot
+    maxPlotLength = 300  # number of points in x-axis of real time plot
     dataNumBytes = 2  # number of bytes of 1 data point
     numPlots = 3  # number of plots in 1 graph
     baudRate = 2000000
@@ -165,25 +171,38 @@ def main():
 
     s.serialStart()
 
-    pltInterval = 10  # Period at which the plot animation updates [ms]
+    pltInterval = 100  # Period at which the plot animation updates [ms]
     xmin = 0
     xmax = maxPlotLength
     ymin = -(32767)
     ymax = 32767
-    fig = plt.figure(figsize=(10, 8))
-    ax = plt.axes(xlim=(xmin, xmax), ylim=(float(ymin - (ymax - ymin) / 10), float(ymax + (ymax - ymin) / 10)))
-    ax.set_title('Arduino Accelerometer')
-    ax.set_xlabel("Time")
-    ax.set_ylabel("Accelerometer Output")
+    fig = plt.figure(figsize=(10, 10))
+    axs = []
+    for i in range(numPlots):
+        ax = plt.subplot(3, 2, (i*2)+1)
+        ax.set_xlim(xmin, xmax)
+        ax.set_ylim(float(ymin - (ymax - ymin) / 10), float(ymax + (ymax - ymin) / 10))
+        ax.set_xlabel("Time")
+        ax.set_ylabel("Accel Output")
+        axs.append(ax)
+        axfft = plt.subplot(3, 2, (i*2)+2)
+        axfft.set_xlabel("Frequency")
+        axfft.set_ylabel("Magnitude")
+        axfft.set_ylim(ymin, ymax)
+        axfft.set_xlim(0, 100)
+        axs.append(axfft)
 
     lineLabel = ['X', 'Y', 'Z']
     style = ['r-', 'c-', 'b-']  # linestyles for the different plots
-    timeText = ax.text(0.70, 0.95, '', transform=ax.transAxes)
+    timeText = axs[0].text(0.70, 0.95, '', transform=axs[0].transAxes)
     lines = []
     lineValueText = []
     for i in range(numPlots):
-        lines.append(ax.plot([], [], style[i], label=lineLabel[i])[0])
-        lineValueText.append(ax.text(0.70, 0.90 - i * 0.05, '', transform=ax.transAxes))
+        line, = axs[i*2].plot([], [], style[i], label=lineLabel[i])
+        lines.append(line)
+        lineValueText.append(axs[i*2].text(0.70, 0.90, '', transform=axs[i*2].transAxes))
+        linefft, = axs[i*2+1].plot([], [], style[i], label=lineLabel[i])
+        lines.append(linefft)
 
     anim = animation.FuncAnimation(fig, s.getserialdata, fargs=(lines, lineValueText, lineLabel, timeText), interval=pltInterval)  # fargs has to be a tuple
     plt.legend(loc="upper left")
