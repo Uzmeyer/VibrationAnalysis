@@ -21,13 +21,14 @@
 #include "main.h"
 #include "dma.h"
 #include "i2c.h"
+#include "spi.h"
 #include "tim.h"
 #include "usb_device.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "lsm6ds3.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -47,8 +48,15 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-uint8_t string[] = "Hello World!\n";
+uint8_t string[] = "Hello World!\n\r";
+char buffer[50];
 uint16_t data[2000];
+uint16_t recdata[12];
+uint16_t lsmaddr = LSM6DS3_ADDRESS << 1;
+int16_t x_val;
+int16_t y_val;
+int16_t z_val;
+int n;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -69,7 +77,6 @@ void SystemClock_Config(void);
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -94,16 +101,40 @@ int main(void)
   MX_I2C1_Init();
   MX_TIM1_Init();
   MX_USB_DEVICE_Init();
+  MX_SPI1_Init();
   /* USER CODE BEGIN 2 */
-  //USBD_CDC_RegisterInterface(&hUsbDeviceFS, &USBD_Interface_fops_FS);
+  //HAL_Delay(5000);
+  //HAL_I2C_Mem_Write(&hi2c1, lsmaddr, (uint16_t) 0x12, I2C_MEMADD_SIZE_8BIT, 0b00000100, 1, HAL_MAX_DELAY);
+  HAL_I2C_Mem_Write(&hi2c1, lsmaddr, (uint16_t) LSM6DS3_CTRL1_XL, I2C_MEMADD_SIZE_8BIT, 0b10100000, 1, HAL_MAX_DELAY);
+  HAL_Delay(100);
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  CDC_Transmit_FS(string, sizeof(string));
-	  HAL_Delay(10);
+	 /* HAL_I2C_Mem_Read(&hi2c1, lsmaddr, (uint16_t) LSM6DS3_OUTX_L_XL, I2C_MEMADD_SIZE_8BIT, &recdata, 1, HAL_MAX_DELAY);
+	  x_val = (recdata[0] & 0xFF);
+	  HAL_I2C_Mem_Read(&hi2c1, lsmaddr, (uint16_t) LSM6DS3_OUTX_H_XL, I2C_MEMADD_SIZE_8BIT, &recdata, 1, HAL_MAX_DELAY);
+	  x_val = (recdata[0] << 8) | x_val;
+	  HAL_I2C_Mem_Read(&hi2c1, lsmaddr, (uint16_t) LSM6DS3_OUTY_L_XL, I2C_MEMADD_SIZE_8BIT, &recdata, 1, HAL_MAX_DELAY);
+	  y_val = (recdata[0] & 0xFF);
+	  HAL_I2C_Mem_Read(&hi2c1, lsmaddr, (uint16_t) LSM6DS3_OUTY_H_XL, I2C_MEMADD_SIZE_8BIT, &recdata, 1, HAL_MAX_DELAY);
+	  y_val = (recdata[0] << 8) | y_val;
+	  HAL_I2C_Mem_Read(&hi2c1, lsmaddr, (uint16_t) LSM6DS3_OUTZ_L_XL, I2C_MEMADD_SIZE_8BIT, &recdata, 1, HAL_MAX_DELAY);
+	  z_val = (recdata[0] & 0xFF);
+	  HAL_I2C_Mem_Read(&hi2c1, lsmaddr, (uint16_t) LSM6DS3_OUTZ_H_XL, I2C_MEMADD_SIZE_8BIT, &recdata, 1, HAL_MAX_DELAY);
+	  z_val = (recdata[0] << 8) | z_val;
+	  n = sprintf(buffer, "individual: %d, %d, %d\n",x_val,y_val,z_val);
+	  CDC_Transmit_FS(buffer, n);
+	  HAL_Delay(300); */
+	  HAL_I2C_Mem_Read(&hi2c1, lsmaddr, (uint16_t) LSM6DS3_OUTX_L_XL, I2C_MEMADD_SIZE_8BIT, &recdata, 6, HAL_MAX_DELAY);
+	  x_val = (recdata[0] & 0xFF ) | ((recdata[1] << 8));
+	  y_val = (recdata[2] & 0xFF ) | ((recdata[3] << 8));
+	  z_val = (recdata[4] & 0xFF ) | ((recdata[5] << 8));
+	  n = sprintf(buffer, "bulk: %d, %d, %d\n",x_val,y_val,z_val);
+	  CDC_Transmit_FS(buffer, n);
+	  HAL_Delay(300);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */

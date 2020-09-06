@@ -111,5 +111,9 @@ baudselect.grid(column=1, row=1)
 baudselect.current(0)
 baudselect.bind('<<ComboboxSelected>>', serialChanged)
 
+sendbutton = Button(window, text='Start')
+sendbutton.grid(column=0, row=3)
+
+
 window.mainloop()
 
