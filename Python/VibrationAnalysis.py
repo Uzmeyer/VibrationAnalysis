@@ -16,6 +16,7 @@ import serial.tools.list_ports
 
 from threading import Thread
 import time
+from datetime import datetime
 import copy
 import collections
 import struct
@@ -28,6 +29,8 @@ class App(Frame):
         self.lines = lines
         self.recbuffer = []
         self.data = []
+        self.fftdata = []
+        self.datetime = ""
         self.serialPortNames = []
         self.bauds = [
             9600,
@@ -81,22 +84,29 @@ class App(Frame):
         canvas = FigureCanvasTkAgg(figure, master=self.master)
         canvas.get_tk_widget().grid(column=1, row=2)
 
+        #toolbar = NavigationToolbar2Tk(canvas, self.master)
+        #toolbar.update()
+
         sendbutton = Button(self.master, text='Start', command=self.startcapture)
-        sendbutton.grid(column=1, row=3)
+        sendbutton.grid(column=3, row=1)
 
     def plotdata(self, frame, lines, axs):
         if not self.dataProcessed:
+            datafile = open((self.datetime + '_data.csv'), 'w+')
+            fftfile = open((self.datetime + '_fft.csv'), 'w+')
             timevals = []
             xvals = []
             yvals = []
             zvals = []
             for sample in self.recbuffer:
                 t, x, y, z = sample
+                datafile.write(t + ',' + x + ',' + y + ',' + z + '\n')
                 timevals.append(int(t))
                 xvals.append(int(x))
                 yvals.append(int(y))
                 zvals.append(int(z))
 
+            datafile.close()
             tmax = max(timevals)
             tmin = min(timevals)
             lims = []
@@ -114,6 +124,13 @@ class App(Frame):
             self.data.append(xvals)
             self.data.append(yvals)
             self.data.append(zvals)
+            xfft = []
+            yfft = []
+            zfft = []
+            self.fftdata.clear()
+            self.fftdata.append(xfft)
+            self.fftdata.append(yfft)
+            self.fftdata.append(zfft)
             timesteps = []
             prevval = 0
             for i in timevals:
@@ -134,9 +151,11 @@ class App(Frame):
                 axs[i * 2].set_xlim(0, tmax)
                 axs[i * 2].set_ylim(lims[i])
                 lines[i * 2].set_data(self.data[0], self.data[index])
-                fourierTransform = abs(np.fft.fft(self.data[index]))#/len(self.data[index])) #normalize
-                spec = fourierTransform[0:int(len(self.data[index])/2)]
-                tpCount = len(self.data[index])
+                data = np.array(self.data[index])
+                #data = data - np.mean(data)
+                fourierTransform = abs(np.fft.fft(data)/len(data)) #normalize
+                spec = fourierTransform[0:int(len(data)/2)]
+                tpCount = len(data)
                 values = np.arange(int(tpCount / 2))
                 timePeriod = tpCount / samplingFrequency
                 frequencies = values / timePeriod
@@ -146,8 +165,11 @@ class App(Frame):
                 axs[i * 2 + 1].set_ylim(smin, smax)
                 axs[i * 2 + 1].set_yscale('log')
                 lines[i * 2 + 1].set_data(frequencies, spec)
+                for f, s in zip(frequencies, spec):
+                    fftfile.write(str(f) + ',' + str(s) + '\n')
 
             self.dataProcessed = True
+            fftfile.close()
 
     def startcapture(self):
         if self.isCapturing:
@@ -173,6 +195,8 @@ class App(Frame):
             if not self.isCapturing:
                 if decode == 'Start':
                     self.isCapturing = True
+                    datetimeobj = datetime.now()
+                    self.datetime = datetimeobj.strftime("%Y%m%d%H%M%S")
                 continue
             else:
                 if decode == 'Stop':
@@ -257,7 +281,7 @@ class App(Frame):
 
 
 def main():
-    fig = plt.figure(figsize=(10, 10))
+    fig = plt.figure(figsize=(8, 8))
     axs = []
     for i in range(3):
         ax = plt.subplot(3, 2, (i * 2) + 1)

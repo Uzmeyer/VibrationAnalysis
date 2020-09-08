@@ -564,7 +564,7 @@ int main(void)
   HAL_Delay(100);
   HAL_I2C_Mem_Write(&hi2c1, mpu6050addr, MPU6050_RA_GYRO_CONFIG, 1, 0b00000000, 1, 1000); //gyro FS 250°/s
   HAL_Delay(100);
-  HAL_I2C_Mem_Write(&hi2c1, mpu6050addr, MPU6050_RA_ACCEL_CONFIG, 1, 0b00010000, 1, 1000); //accel FS 2g
+  HAL_I2C_Mem_Write(&hi2c1, mpu6050addr, MPU6050_RA_ACCEL_CONFIG, 1, 0b00011000, 1, 1000); //accel FS 2g
   HAL_Delay(100);
   HAL_I2C_Mem_Write(&hi2c1, mpu6050addr, MPU6050_RA_CONFIG, 1, 0b00000001, 1, 1000); //enable DLPF
   HAL_Delay(100);

@@ -39,11 +39,11 @@ Idx Name          Size      VMA       LMA       File off  Algn
                   CONTENTS, READONLY, DEBUGGING
  17 .debug_line   0000da42  00000000  00000000  00057cd4  2**0
                   CONTENTS, READONLY, DEBUGGING
- 18 .debug_str    000d280c  00000000  00000000  00065716  2**0
+ 18 .debug_str    000d282b  00000000  00000000  00065716  2**0
                   CONTENTS, READONLY, DEBUGGING
- 19 .comment      0000007b  00000000  00000000  00137f22  2**0
+ 19 .comment      0000007b  00000000  00000000  00137f41  2**0
                   CONTENTS, READONLY
- 20 .debug_frame  0000451c  00000000  00000000  00137fa0  2**2
+ 20 .debug_frame  0000451c  00000000  00000000  00137fbc  2**2
                   CONTENTS, READONLY, DEBUGGING
 
 Disassembly of section .text:
@@ -1074,7 +1074,7 @@ int main(void)
   HAL_Delay(100);
  8000a3e:	2064      	movs	r0, #100	; 0x64
  8000a40:	f000 fd56 	bl	80014f0 <HAL_Delay>
-  HAL_I2C_Mem_Write(&hi2c1, mpu6050addr, MPU6050_RA_ACCEL_CONFIG, 1, 0b00010000, 1, 1000); //accel FS 2g
+  HAL_I2C_Mem_Write(&hi2c1, mpu6050addr, MPU6050_RA_ACCEL_CONFIG, 1, 0b00011000, 1, 1000); //accel FS 2g
  8000a44:	f507 43bb 	add.w	r3, r7, #23936	; 0x5d80
  8000a48:	f103 0348 	add.w	r3, r3, #72	; 0x48
  8000a4c:	8819      	ldrh	r1, [r3, #0]
@@ -1082,7 +1082,7 @@ int main(void)
  8000a52:	9302      	str	r3, [sp, #8]
  8000a54:	2301      	movs	r3, #1
  8000a56:	9301      	str	r3, [sp, #4]
- 8000a58:	2310      	movs	r3, #16
+ 8000a58:	2318      	movs	r3, #24
  8000a5a:	9300      	str	r3, [sp, #0]
  8000a5c:	2301      	movs	r3, #1
  8000a5e:	221c      	movs	r2, #28
@@ -2411,9 +2411,9 @@ void MX_USART2_UART_Init(void)
  8001264:	4b11      	ldr	r3, [pc, #68]	; (80012ac <MX_USART2_UART_Init+0x4c>)
  8001266:	4a12      	ldr	r2, [pc, #72]	; (80012b0 <MX_USART2_UART_Init+0x50>)
  8001268:	601a      	str	r2, [r3, #0]
-  huart2.Init.BaudRate = 57600;
+  huart2.Init.BaudRate = 460800;
  800126a:	4b10      	ldr	r3, [pc, #64]	; (80012ac <MX_USART2_UART_Init+0x4c>)
- 800126c:	f44f 4261 	mov.w	r2, #57600	; 0xe100
+ 800126c:	f44f 22e1 	mov.w	r2, #460800	; 0x70800
  8001270:	605a      	str	r2, [r3, #4]
   huart2.Init.WordLength = UART_WORDLENGTH_8B;
  8001272:	4b0e      	ldr	r3, [pc, #56]	; (80012ac <MX_USART2_UART_Init+0x4c>)

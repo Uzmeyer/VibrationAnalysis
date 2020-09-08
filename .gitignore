@@ -99,6 +99,7 @@ ipython_config.py
 
 ### pydev ###
 .pydevproject
+*.csv
 
 ### Python ###
 # Byte-compiled / optimized / DLL files

@@ -61,8 +61,8 @@ VibrationAnalysis446.bin \
 all: VibrationAnalysis446.elf secondary-outputs
 
 # Tool invocations
-VibrationAnalysis446.elf: $(OBJS) $(USER_OBJS) D:\Dokumente\Projects\VibrationAnalysis\stm32f446\STM32F446RETX_FLASH.ld
-	arm-none-eabi-g++ -o "VibrationAnalysis446.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"D:\Dokumente\Projects\VibrationAnalysis\stm32f446\STM32F446RETX_FLASH.ld" --specs=nosys.specs -Wl,-Map="VibrationAnalysis446.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -lstdc++ -lsupc++ -Wl,--end-group
+VibrationAnalysis446.elf: $(OBJS) $(USER_OBJS) C:\Users\jakob\Documents\Projects\Vibration\ analysis\VibrationAnalysis\stm32f446\STM32F446RETX_FLASH.ld
+	arm-none-eabi-g++ -o "VibrationAnalysis446.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\Users\jakob\Documents\Projects\Vibration analysis\VibrationAnalysis\stm32f446\STM32F446RETX_FLASH.ld" --specs=nosys.specs -Wl,-Map="VibrationAnalysis446.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -lstdc++ -lsupc++ -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 
