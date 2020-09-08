@@ -625,15 +625,20 @@ int main(void)
 		  capturestate = CAPTURESTATE_TRANSMITTING;
 		  break;
 	  case CAPTURESTATE_TRANSMITTING:
+		  n = sprintf(buffer, "Start\n");
+		  HAL_UART_Transmit(&huart2, buffer, n, HAL_MAX_DELAY);
 		  for(int i = 0; i<SAMPLECOUNT ; i++)
 	  		  {
 	  			  while(!uartTxComplete)
 	  			  {
 	  			  }
-	  			  n = sprintf(buffer, "%u, %d, %d, %d\n",data[i].micros, data[i].x.Word, data[i].y.Word, data[i].z.Word);
+	  			  n = sprintf(buffer, "%u,%d,%d,%d\n",data[i].micros, data[i].x.Word, data[i].y.Word, data[i].z.Word);
 	  			  HAL_UART_Transmit_DMA(&huart2, buffer, n);
 	  			  uartTxComplete = 0;
 	  		  }
+		  HAL_Delay(100);
+		  n = sprintf(buffer, "Stop\n");
+		  HAL_UART_Transmit(&huart2, buffer, n, HAL_MAX_DELAY);
 		  capturestate = CAPTURESTATE_IDLE;
 		  break;
 	  default:
