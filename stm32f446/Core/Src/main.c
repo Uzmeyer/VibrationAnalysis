@@ -548,7 +548,7 @@ int main(void)
   MX_USART2_UART_Init();
   MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
-  //HAL_NVIC_DisableIRQ(EXTI9_5_IRQn); //disable interrupt
+  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);
   HAL_I2C_Mem_Read(&hi2c1, mpu6050addr, MPU6050_RA_PWR_MGMT_1, 1, &statusbuff, 1, 1000);
   HAL_I2C_Mem_Write(&hi2c1, mpu6050addr, MPU6050_RA_PWR_MGMT_1, 1, 0b00000000, 1, 1000); //wake from sleep
   HAL_I2C_Mem_Read(&hi2c1, mpu6050addr, MPU6050_RA_PWR_MGMT_1, 1, &statusbuff, 1, 1000);
@@ -574,7 +574,7 @@ int main(void)
   HAL_Delay(100);
   HAL_I2C_Mem_Write(&hi2c1, mpu6050addr, MPU6050_RA_INT_ENABLE, 1, 0b00000001, 1, 1000); //enable data rdy int
   HAL_Delay(100);
-
+  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_RESET);
 
   //HAL_NVIC_EnableIRQ(EXTI9_5_IRQn); //enable interrupt
   HAL_TIM_Base_Start(&htim2);
@@ -594,6 +594,7 @@ int main(void)
 			  if(uartByte == 's')
 			  {
 				  capturestate = CAPTURESTATE_CAPTURING;
+				  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);
 				  __HAL_TIM_SET_COUNTER(&htim2, 0);
 			  }
 			  uartByteReceived = 0;
@@ -640,6 +641,7 @@ int main(void)
 		  n = sprintf(buffer, "Stop\n");
 		  HAL_UART_Transmit(&huart2, buffer, n, HAL_MAX_DELAY);
 		  capturestate = CAPTURESTATE_IDLE;
+		  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_RESET);
 		  break;
 	  default:
 		  break;
